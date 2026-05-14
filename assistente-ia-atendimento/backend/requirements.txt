@@ -1,0 +1,55 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Assistente IA para Atendimento — Python Dependencies
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Web Framework
+fastapi==0.115.4
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+
+# Database
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+
+# Settings & Validation
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# OpenAI
+openai==1.57.0
+
+# HTTP Client
+httpx==0.28.1
+
+# Redis (cache + filas)
+redis[asyncio]==5.2.1
+
+# Logging estruturado
+structlog==24.4.0
+colorama==0.4.6  # Cores no terminal (dev)
+
+# Retry automático
+tenacity==9.0.0
+
+# Segurança / JWT
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Utilitários
+python-dotenv==1.0.1
+orjson==3.10.12  # JSON mais rápido
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Desenvolvimento
+# ──────────────────────────────────────────────────────────────────────────────
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+httpx==0.28.1  # Para TestClient
+factory-boy==3.3.1  # Fixtures
+faker==33.1.0
+
+# Qualidade de código
+ruff==0.8.4
+mypy==1.13.0

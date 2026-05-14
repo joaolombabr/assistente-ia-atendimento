@@ -1,0 +1,199 @@
+{
+  "name": "Assistente IA - Fluxo Principal",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-incoming",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-whatsapp",
+      "name": "Webhook WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "notes": "Recebe mensagens do WhatsApp via Meta Graph API"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram-incoming",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-telegram",
+      "name": "Webhook Telegram",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "notes": "Recebe updates do Telegram Bot API"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-whatsapp",
+              "leftValue": "={{ $node['Webhook WhatsApp'].json.object }}",
+              "rightValue": "whatsapp_business_account",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "router",
+      "name": "Router Canal",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 400],
+      "notes": "Roteia para o handler correto baseado no canal"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/webhooks/whatsapp",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "call-api-whatsapp",
+      "name": "Chamar API FastAPI (WhatsApp)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300],
+      "notes": "Encaminha para a API FastAPI processar com IA"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/webhooks/telegram",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "call-api-telegram",
+      "name": "Chamar API FastAPI (Telegram)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 500],
+      "notes": "Encaminha para a API FastAPI processar com IA"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "check-success",
+      "name": "Processado com Sucesso?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"ok\", \"message_id\": \"{{ $json.message_id }}\" }"
+      },
+      "id": "respond-success",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 320]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 500,
+        "responseBody": "={ \"status\": \"error\" }"
+      },
+      "id": "respond-error",
+      "name": "Responder Erro",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 500]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://api:8000/admin/stats",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth"
+      },
+      "id": "get-stats",
+      "name": "Buscar Estatísticas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [240, 700],
+      "notes": "Pode ser disparado por agendamento para monitoramento"
+    }
+  ],
+  "connections": {
+    "Webhook WhatsApp": {
+      "main": [
+        [{"node": "Router Canal", "type": "main", "index": 0}]
+      ]
+    },
+    "Webhook Telegram": {
+      "main": [
+        [{"node": "Chamar API FastAPI (Telegram)", "type": "main", "index": 0}]
+      ]
+    },
+    "Router Canal": {
+      "main": [
+        [{"node": "Chamar API FastAPI (WhatsApp)", "type": "main", "index": 0}],
+        [{"node": "Chamar API FastAPI (Telegram)", "type": "main", "index": 0}]
+      ]
+    },
+    "Chamar API FastAPI (WhatsApp)": {
+      "main": [
+        [{"node": "Processado com Sucesso?", "type": "main", "index": 0}]
+      ]
+    },
+    "Chamar API FastAPI (Telegram)": {
+      "main": [
+        [{"node": "Processado com Sucesso?", "type": "main", "index": 0}]
+      ]
+    },
+    "Processado com Sucesso?": {
+      "main": [
+        [{"node": "Responder OK", "type": "main", "index": 0}],
+        [{"node": "Responder Erro", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["atendimento", "ia", "whatsapp", "telegram"],
+  "notes": "Workflow principal do Assistente IA para Atendimento. Recebe webhooks do WhatsApp e Telegram, encaminha para a API FastAPI que processa com OpenAI e responde automaticamente."
+}
