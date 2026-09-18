@@ -244,22 +244,6 @@ docker-compose run --rm migrate alembic downgrade -1
 
 ---
 
-## 🧪 Testes
-
-```bash
-# Instala dependências de dev
-pip install -r requirements.txt
-
-# Roda testes
-cd backend
-pytest --cov=app tests/ -v
-
-# Roda apenas testes de integração
-pytest tests/integration/ -v
-```
-
----
-
 ## 📦 Deploy em Cloud
 
 ### Railway (mais simples)
